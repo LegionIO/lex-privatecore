@@ -32,7 +32,7 @@ module Legion
           def check_pii(text:, **)
             {
               contains_pii: Helpers::Boundary.contains_pii?(text),
-              stripped:      Helpers::Boundary.strip_pii(text)
+              stripped:     Helpers::Boundary.strip_pii(text)
             }
           end
 
