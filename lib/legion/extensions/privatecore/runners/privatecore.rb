@@ -14,7 +14,7 @@ module Legion
               pii_found = Helpers::Boundary.contains_pii?(text)
               stripped = Helpers::Boundary.strip_pii(text)
               Legion::Logging.debug "[privatecore] boundary outbound: length=#{text.length} pii_found=#{pii_found}"
-              Legion::Logging.warn "[privatecore] PII stripped from outbound text" if pii_found
+              Legion::Logging.warn '[privatecore] PII stripped from outbound text' if pii_found
               {
                 original_length: text.length,
                 cleaned:         stripped,
@@ -25,7 +25,7 @@ module Legion
               probe = Helpers::Boundary.detect_probe(text)
               action = probe ? :flag_and_log : :allow
               Legion::Logging.debug "[privatecore] boundary inbound: probe=#{!probe.nil?} action=#{action}"
-              Legion::Logging.warn "[privatecore] PROBE DETECTED in inbound text" if probe
+              Legion::Logging.warn '[privatecore] PROBE DETECTED in inbound text' if probe
               {
                 text:      text,
                 probe:     probe,
