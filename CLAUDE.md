@@ -22,14 +22,18 @@ Privacy boundary enforcement and cryptographic erasure for the LegionIO cognitiv
 lib/legion/extensions/privatecore/
   version.rb
   helpers/
-    boundary.rb  # PII_PATTERNS, PROBE_PATTERNS, REDACTION_MARKER, strip_pii, detect_probe, contains_pii?
+    boundary.rb  # PII_PATTERNS, PROBE_PATTERNS, REDACTION_MARKER, MAX_AUDIT_LOG_SIZE, strip_pii, detect_probe, contains_pii?
     erasure.rb   # Erasure class - erase_by_type, erase_by_partition, full_erasure, audit_log
   runners/
-    privatecore.rb # enforce_boundary, check_pii, detect_probe, erasure_audit
+    privatecore.rb # enforce_boundary, check_pii, detect_probe, erasure_audit, prune_audit_log
+  actors/
+    audit_prune.rb # AuditPrune - Every 3600s, calls prune_audit_log
 spec/
   legion/extensions/privatecore/
     runners/
       privatecore_spec.rb
+    actors/
+      audit_prune_spec.rb
     client_spec.rb
 ```
 
@@ -49,7 +53,8 @@ PROBE_PATTERNS = [
   /bypass .+ boundary/i,
   /ignore .+ directive/i
 ]
-REDACTION_MARKER = '[REDACTED]'
+REDACTION_MARKER   = '[REDACTED]'
+MAX_AUDIT_LOG_SIZE = 1000
 ```
 
 ## Erasure Class
@@ -58,7 +63,13 @@ REDACTION_MARKER = '[REDACTED]'
 
 This design means erasure logic lives here but the memory store is passed in from the caller (typically from `lex-memory`'s consolidation runner).
 
-Audit log entries: `{ action: Symbol, at: Time, **details }` — unbounded.
+Audit log entries: `{ action: Symbol, at: Time, **details }` — capped at `MAX_AUDIT_LOG_SIZE` (1000) by the `AuditPrune` actor.
+
+## Actors
+
+| Actor | Interval | Runner Method | What It Does |
+|-------|----------|---------------|--------------|
+| `AuditPrune` | Every 3600s | `prune_audit_log` | Caps the audit log at `MAX_AUDIT_LOG_SIZE` (1000) by shifting oldest entries off the front |
 
 ## enforce_boundary Logic
 
@@ -79,3 +90,4 @@ Unknown directions: nil return (caller must handle).
 - The IP pattern will match partial IPs and some non-IP strings (false positives expected); intentionally broad
 - Erasure methods receive a live array reference and mutate it — callers must pass the actual store's array
 - `@erasure_engine` on the runner is lazily initialized; each runner instance has its own audit log
+- `prune_audit_log` uses `shift` in a loop to remove oldest entries first; the `AuditPrune` actor calls this hourly to prevent unbounded growth
