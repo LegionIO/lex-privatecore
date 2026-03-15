@@ -56,6 +56,18 @@ module Legion
             { audit_log: erasure_engine.audit_log, count: count }
           end
 
+          def prune_audit_log(**)
+            log = erasure_engine.audit_log
+            cap = Helpers::Boundary::MAX_AUDIT_LOG_SIZE
+            pruned = 0
+            while log.size > cap
+              log.shift
+              pruned += 1
+            end
+            Legion::Logging.debug "[privatecore] audit prune: pruned=#{pruned} remaining=#{log.size}"
+            { pruned: pruned, remaining: log.size }
+          end
+
           private
 
           def erasure_engine

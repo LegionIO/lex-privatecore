@@ -71,4 +71,18 @@ RSpec.describe Legion::Extensions::Privatecore::Runners::Privatecore do
       expect(result[:count]).to eq(0)
     end
   end
+
+  describe '#prune_audit_log' do
+    it 'returns zero pruned when audit log is empty' do
+      result = client.prune_audit_log
+      expect(result[:pruned]).to eq(0)
+      expect(result[:remaining]).to eq(0)
+    end
+
+    it 'does not prune when log is below the cap' do
+      client.erasure_audit # no-op, log stays empty
+      result = client.prune_audit_log
+      expect(result[:pruned]).to eq(0)
+    end
+  end
 end

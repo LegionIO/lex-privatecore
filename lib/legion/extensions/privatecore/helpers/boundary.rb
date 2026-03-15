@@ -22,7 +22,8 @@ module Legion
             /ignore .+ directive/i
           ].freeze
 
-          REDACTION_MARKER = '[REDACTED]'
+          REDACTION_MARKER    = '[REDACTED]'
+          MAX_AUDIT_LOG_SIZE  = 1000
 
           module_function
 
