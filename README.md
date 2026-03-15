@@ -85,6 +85,12 @@ Legion::Extensions::Privatecore::Runners::Privatecore.erasure_audit
 # => { audit_log: [...], count: 3 }
 ```
 
+## Actors
+
+| Actor | Interval | What It Does |
+|-------|----------|--------------|
+| `AuditPrune` | Every 3600s | Prunes the erasure audit log to `MAX_AUDIT_LOG_SIZE` (1000), keeping the most recent entries |
+
 ## Development
 
 ```bash
