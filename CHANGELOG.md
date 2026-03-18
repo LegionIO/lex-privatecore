@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.2] - 2026-03-18
+
+### Changed
+- removed unused legion-gaia dependency
+- deleted gemfile.lock
+
 ## [0.1.1] - 2026-03-14
 
 ### Added
