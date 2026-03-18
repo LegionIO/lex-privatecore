@@ -11,7 +11,7 @@ Privacy boundary enforcement and cryptographic erasure for the LegionIO cognitiv
 ## Gem Info
 
 - **Gem name**: `lex-privatecore`
-- **Version**: `0.1.0`
+- **Version**: `0.1.1`
 - **Module**: `Legion::Extensions::Privatecore`
 - **Ruby**: `>= 3.4`
 - **License**: MIT
