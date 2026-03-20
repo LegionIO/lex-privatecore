@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.3] - 2026-03-20
+
+### Added
+- Emit `privatecore.probe_detected` event for safety metrics integration
+
 ## [0.1.2] - 2026-03-18
 
 ### Changed
