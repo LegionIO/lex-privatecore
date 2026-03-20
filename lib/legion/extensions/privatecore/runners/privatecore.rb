@@ -47,6 +47,7 @@ module Legion
           def detect_probe(text:, **)
             probe = Helpers::Boundary.detect_probe(text)
             Legion::Logging.debug "[privatecore] probe check: detected=#{!probe.nil?}"
+            Legion::Events.emit('privatecore.probe_detected', text_length: text.length) if probe && defined?(Legion::Events)
             { probe_detected: probe }
           end
 
