@@ -10,4 +10,10 @@ RSpec.describe Legion::Extensions::Privatecore::Client do
     expect(client).to respond_to(:detect_probe)
     expect(client).to respond_to(:erasure_audit)
   end
+
+  it 'responds to embedding guard runner methods' do
+    client = described_class.new
+    expect(client).to respond_to(:check_embedding_similarity)
+    expect(client).to respond_to(:cache_pattern_embeddings)
+  end
 end
