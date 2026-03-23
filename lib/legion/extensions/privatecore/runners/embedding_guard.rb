@@ -28,13 +28,13 @@ module Legion
             effective_patterns  = patterns || DEFAULT_ADVERSARIAL_PATTERNS
 
             unless defined?(Legion::LLM)
-              Legion::Logging.debug '[privatecore] embedding guard: Legion::LLM unavailable, skipping'
+              log.debug '[privatecore] embedding guard: Legion::LLM unavailable, skipping'
               return { safe: true, max_similarity: 0.0, matched_pattern: nil, details: [], skipped: true }
             end
 
             input_vec = embed(input)
             if input_vec.nil?
-              Legion::Logging.warn '[privatecore] embedding guard: failed to embed input'
+              log.warn '[privatecore] embedding guard: failed to embed input'
               return { safe: true, max_similarity: 0.0, matched_pattern: nil, details: [], error: :embed_failed }
             end
 
@@ -45,8 +45,8 @@ module Legion
             matched      = max_sim >= effective_threshold ? max_entry[:pattern] : nil
             safe         = matched.nil?
 
-            Legion::Logging.debug "[privatecore] embedding guard: max_similarity=#{max_sim.round(4)} threshold=#{effective_threshold} safe=#{safe}"
-            Legion::Logging.warn "[privatecore] ADVERSARIAL INPUT DETECTED via embedding: #{matched}" unless safe
+            log.debug "[privatecore] embedding guard: max_similarity=#{max_sim.round(4)} threshold=#{effective_threshold} safe=#{safe}"
+            log.warn "[privatecore] ADVERSARIAL INPUT DETECTED via embedding: #{matched}" unless safe
 
             { safe: safe, max_similarity: max_sim, matched_pattern: matched, details: details }
           end
@@ -73,7 +73,7 @@ module Legion
           def embed(text)
             Legion::LLM.embed(text)
           rescue StandardError => e
-            Legion::Logging.debug "[privatecore] embed error: #{e.message}"
+            log.debug "[privatecore] embed error: #{e.message}"
             nil
           end
 

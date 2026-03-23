@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5] - 2026-03-22
+
+### Changed
+- Add legion-cache, legion-crypt, legion-data, legion-json, legion-logging, legion-settings, and legion-transport as runtime dependencies
+- Replace direct Legion::Logging calls with injected log helper in runners/privatecore.rb and runners/embedding_guard.rb
+- Update spec_helper with real sub-gem helper requires and Helpers::Lex stub
+
 ## [0.1.4] - 2026-03-21
 
 ### Added
