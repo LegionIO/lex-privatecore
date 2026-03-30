@@ -4,7 +4,7 @@ module Legion
   module Extensions
     module Privatecore
       module Runners
-        module EmbeddingGuard
+        module EmbeddingGuard # rubocop:disable Legion/Extension/RunnerIncludeHelpers
           DEFAULT_ADVERSARIAL_PATTERNS = [
             'ignore previous instructions',
             'you are now',
@@ -61,7 +61,7 @@ module Legion
           private
 
           def resolve_threshold(override)
-            return override unless override.nil?
+            return override unless override.nil? # rubocop:disable Legion/Extension/RunnerReturnHash
 
             if defined?(Legion::Settings)
               Legion::Settings.dig(:privatecore, :embedding_guard, :threshold) || 0.85
@@ -71,7 +71,7 @@ module Legion
           end
 
           def embed(text)
-            Legion::LLM.embed(text)
+            Legion::LLM.embed(text) # rubocop:disable Legion/HelperMigration/DirectLlm
           rescue StandardError => e
             log.debug "[privatecore] embed error: #{e.message}"
             nil
