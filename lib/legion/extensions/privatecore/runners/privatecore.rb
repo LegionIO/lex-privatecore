@@ -5,8 +5,8 @@ module Legion
     module Privatecore
       module Runners
         module Privatecore
-          include Legion::Extensions::Helpers::Lex if Legion::Extensions.const_defined?(:Helpers) &&
-                                                      Legion::Extensions::Helpers.const_defined?(:Lex)
+          include Legion::Extensions::Helpers::Lex if Legion::Extensions.const_defined?(:Helpers, false) &&
+                                                      Legion::Extensions::Helpers.const_defined?(:Lex, false)
 
           def enforce_boundary(text:, direction: :outbound, **)
             case direction

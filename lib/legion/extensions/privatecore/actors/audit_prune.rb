@@ -6,7 +6,7 @@ module Legion
   module Extensions
     module Privatecore
       module Actor
-        class AuditPrune < Legion::Extensions::Actors::Every
+        class AuditPrune < Legion::Extensions::Actors::Every # rubocop:disable Legion/Extension/EveryActorRequiresTime
           def runner_class
             Legion::Extensions::Privatecore::Runners::Privatecore
           end
