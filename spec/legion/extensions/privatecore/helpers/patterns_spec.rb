@@ -166,7 +166,10 @@ RSpec.describe Legion::Extensions::Privatecore::Helpers::Patterns do
       end
 
       it 'detects a bearer token' do
-        result = described_class.detect('Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U', enabled: enabled, validation: validation)
+        token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U'
+        result = described_class.detect(
+          "Authorization: Bearer #{token}", enabled: enabled, validation: validation
+        )
         match = result.find { |d| d[:type] == :bearer_token }
         expect(match).not_to be_nil
         expect(match[:category]).to eq(:credential)

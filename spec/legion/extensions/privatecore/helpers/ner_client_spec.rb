@@ -57,9 +57,9 @@ RSpec.describe Legion::Extensions::Privatecore::Helpers::NerClient do
       end
       conn = Faraday.new(url: service_url) { |f| f.adapter :test, stubs }
 
-      expect {
+      expect do
         described_class.analyze(text: 'test', connection: conn, fallback: :strict)
-      }.to raise_error(Legion::Extensions::Privatecore::Helpers::NerClient::NerServiceUnavailable)
+      end.to raise_error(Legion::Extensions::Privatecore::Helpers::NerClient::NerServiceUnavailable)
     end
 
     it 'ignores unknown entity types' do

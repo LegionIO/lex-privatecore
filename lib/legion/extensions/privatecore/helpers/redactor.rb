@@ -31,8 +31,6 @@ module Legion
 
           def build_replacement(detection, mode, type_counters, mapping)
             case mode
-            when :redact
-              REDACTION_MARKER
             when :placeholder
               type_counters[detection[:type]] += 1
               tag = "[#{detection[:type].upcase}_#{type_counters[detection[:type]]}]"
@@ -98,14 +96,14 @@ module Legion
 
           def persist_mapping(mapping:, key:, ttl:)
             actual_key = key || SecureRandom.uuid
-            Legion::Cache.set("privatecore:mapping:#{actual_key}", mapping, ttl: ttl) if defined?(Legion::Cache)
+            Legion::Cache.set("privatecore:mapping:#{actual_key}", mapping, ttl: ttl) if defined?(Legion::Cache) # rubocop:disable Legion/HelperMigration/DirectCache
             actual_key
           end
 
           def retrieve_mapping(key:)
             return nil unless defined?(Legion::Cache)
 
-            Legion::Cache.get("privatecore:mapping:#{key}")
+            Legion::Cache.get("privatecore:mapping:#{key}") # rubocop:disable Legion/HelperMigration/DirectCache
           end
         end
       end

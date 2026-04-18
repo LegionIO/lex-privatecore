@@ -22,17 +22,17 @@ module Legion
             'LOCATION'          => :location,
             'IBAN_CODE'         => :iban,
             'US_PASSPORT'       => :passport,
-            'US_DRIVER_LICENSE'  => :drivers_license,
+            'US_DRIVER_LICENSE' => :drivers_license,
             'CRYPTO'            => :crypto,
             'NRP'               => :national_id
           }.freeze
 
           NER_CATEGORIES = {
-            person_name:    :personal,
-            organization:   :entity,
-            location:       :location,
-            national_id:    :government_id,
-            crypto:         :crypto
+            person_name:  :personal,
+            organization: :entity,
+            location:     :location,
+            national_id:  :government_id,
+            crypto:       :crypto
           }.freeze
 
           module_function
@@ -52,7 +52,8 @@ module Legion
           def available?(connection:)
             response = connection.get('/health')
             response.status == 200
-          rescue Faraday::Error
+          rescue Faraday::Error => e
+            Legion::Logging.warn "[privatecore] NER health check failed: #{e.message}" # rubocop:disable Legion/HelperMigration/DirectLogging
             false
           end
 
@@ -87,10 +88,6 @@ module Legion
 
           def handle_fallback(fallback, error)
             case fallback
-            when :silent
-              []
-            when :transparent
-              []
             when :strict
               raise NerServiceUnavailable, "NER service unavailable: #{error.message}"
             else

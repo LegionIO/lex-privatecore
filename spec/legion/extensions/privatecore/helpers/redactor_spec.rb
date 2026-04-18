@@ -81,7 +81,7 @@ RSpec.describe Legion::Extensions::Privatecore::Helpers::Redactor do
   describe '.persist_mapping' do
     before do
       stub_const('Legion::Cache', Class.new do
-        def self.set(key, value, ttl: nil)
+        def self.set(key, value, ttl: nil) # rubocop:disable Lint/UnusedMethodArgument
           @store ||= {}
           @store[key] = value
         end
@@ -110,7 +110,7 @@ RSpec.describe Legion::Extensions::Privatecore::Helpers::Redactor do
   describe '.retrieve_mapping' do
     before do
       stub_const('Legion::Cache', Class.new do
-        def self.set(key, value, ttl: nil)
+        def self.set(key, value, ttl: nil) # rubocop:disable Lint/UnusedMethodArgument
           @store ||= {}
           @store[key] = value
         end
