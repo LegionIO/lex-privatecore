@@ -62,5 +62,122 @@ RSpec.describe Legion::Extensions::Privatecore::Helpers::Patterns do
       result = described_class.detect(nil, enabled: enabled, validation: validation)
       expect(result).to eq([])
     end
+
+    context 'with expanded patterns enabled' do
+      let(:enabled) do
+        %i[email phone ssn ip credit_card dob mrn passport iban drivers_license
+           url btc_address eth_address itin aadhaar api_key bearer_token aws_key]
+      end
+
+      it 'detects a credit card number' do
+        result = described_class.detect('Card: 4111-1111-1111-1111', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :credit_card }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:financial)
+      end
+
+      it 'detects a credit card without separators' do
+        result = described_class.detect('Card: 4111111111111111', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :credit_card }
+        expect(match).not_to be_nil
+      end
+
+      it 'detects date of birth' do
+        result = described_class.detect('DOB: 1990-01-15', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :dob }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:personal)
+      end
+
+      it 'detects date of birth with label' do
+        result = described_class.detect('date of birth: 03/15/1990', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :dob }
+        expect(match).not_to be_nil
+      end
+
+      it 'detects medical record number' do
+        result = described_class.detect('MRN: 1234567', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :mrn }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:medical)
+      end
+
+      it 'detects a passport number' do
+        result = described_class.detect('Passport: A12345678', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :passport }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:government_id)
+      end
+
+      it 'detects an IBAN code' do
+        result = described_class.detect('IBAN: DE89370400440532013000', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :iban }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:financial)
+      end
+
+      it 'detects a drivers license number' do
+        result = described_class.detect('DL: D123-4567-8901', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :drivers_license }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:government_id)
+      end
+
+      it 'detects a URL' do
+        result = described_class.detect('Visit https://example.com/path?q=1', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :url }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:network)
+      end
+
+      it 'detects a BTC address' do
+        result = described_class.detect('Send to 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :btc_address }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:crypto)
+      end
+
+      it 'detects an ETH address' do
+        result = described_class.detect('ETH: 0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :eth_address }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:crypto)
+      end
+
+      it 'detects an ITIN' do
+        result = described_class.detect('ITIN: 912-78-1234', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :itin }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:government_id)
+      end
+
+      it 'detects an Aadhaar number' do
+        result = described_class.detect('Aadhaar: 2345 6789 0123', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :aadhaar }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:government_id)
+      end
+
+      it 'detects an API key pattern' do
+        result = described_class.detect('key: sk_test_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :api_key }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:credential)
+      end
+
+      it 'detects a bearer token' do
+        result = described_class.detect('Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :bearer_token }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:credential)
+      end
+
+      it 'detects an AWS access key' do
+        result = described_class.detect('AWS key: AKIAIOSFODNN7EXAMPLE', enabled: enabled, validation: validation)
+        match = result.find { |d| d[:type] == :aws_key }
+        expect(match).not_to be_nil
+        expect(match[:category]).to eq(:credential)
+      end
+    end
   end
 end
