@@ -87,6 +87,26 @@ module Legion
             check = (10 - (sum % 10)) % 10
             (digits << check).join
           end
+
+          def restore(text:, mapping:)
+            return text if mapping.nil? || mapping.empty?
+
+            result = text.dup
+            mapping.each { |placeholder, original| result.gsub!(placeholder, original) }
+            result
+          end
+
+          def persist_mapping(mapping:, key:, ttl:)
+            actual_key = key || SecureRandom.uuid
+            Legion::Cache.set("privatecore:mapping:#{actual_key}", mapping, ttl: ttl) if defined?(Legion::Cache)
+            actual_key
+          end
+
+          def retrieve_mapping(key:)
+            return nil unless defined?(Legion::Cache)
+
+            Legion::Cache.get("privatecore:mapping:#{key}")
+          end
         end
       end
     end

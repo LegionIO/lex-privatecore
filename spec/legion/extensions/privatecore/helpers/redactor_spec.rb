@@ -63,4 +63,75 @@ RSpec.describe Legion::Extensions::Privatecore::Helpers::Redactor do
       expect(result[:cleaned]).to be_nil
     end
   end
+
+  describe '.restore' do
+    it 'reverses placeholder substitution' do
+      mapping = { '[SSN_1]' => '123-45-6789', '[EMAIL_1]' => 'john@example.com' }
+      redacted = 'SSN: [SSN_1] and email [EMAIL_1]'
+      result = described_class.restore(text: redacted, mapping: mapping)
+      expect(result).to eq('SSN: 123-45-6789 and email john@example.com')
+    end
+
+    it 'returns text unchanged with empty mapping' do
+      result = described_class.restore(text: 'unchanged', mapping: {})
+      expect(result).to eq('unchanged')
+    end
+  end
+
+  describe '.persist_mapping' do
+    before do
+      stub_const('Legion::Cache', Class.new do
+        def self.set(key, value, ttl: nil)
+          @store ||= {}
+          @store[key] = value
+        end
+
+        def self.get(key)
+          @store ||= {}
+          @store[key]
+        end
+      end)
+    end
+
+    it 'stores mapping in cache and returns a key' do
+      mapping = { '[SSN_1]' => '123-45-6789' }
+      key = described_class.persist_mapping(mapping: mapping, key: nil, ttl: 3600)
+      expect(key).to be_a(String)
+      expect(key.length).to eq(36)
+    end
+
+    it 'uses provided key' do
+      mapping = { '[SSN_1]' => '123-45-6789' }
+      key = described_class.persist_mapping(mapping: mapping, key: 'my-key', ttl: 3600)
+      expect(key).to eq('my-key')
+    end
+  end
+
+  describe '.retrieve_mapping' do
+    before do
+      stub_const('Legion::Cache', Class.new do
+        def self.set(key, value, ttl: nil)
+          @store ||= {}
+          @store[key] = value
+        end
+
+        def self.get(key)
+          @store ||= {}
+          @store[key]
+        end
+      end)
+    end
+
+    it 'retrieves a previously stored mapping' do
+      mapping = { '[SSN_1]' => '123-45-6789' }
+      key = described_class.persist_mapping(mapping: mapping, key: 'test-key', ttl: 3600)
+      retrieved = described_class.retrieve_mapping(key: key)
+      expect(retrieved).to eq(mapping)
+    end
+
+    it 'returns nil for missing key' do
+      result = described_class.retrieve_mapping(key: 'nonexistent')
+      expect(result).to be_nil
+    end
+  end
 end
