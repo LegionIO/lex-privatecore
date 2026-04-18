@@ -11,7 +11,7 @@ Privacy boundary enforcement and cryptographic erasure for the LegionIO cognitiv
 ## Gem Info
 
 - **Gem name**: `lex-privatecore`
-- **Version**: `0.1.5`
+- **Version**: `0.2.0`
 - **Module**: `Legion::Extensions::Privatecore`
 - **Ruby**: `>= 3.4`
 - **License**: MIT
@@ -68,13 +68,13 @@ MAX_AUDIT_LOG_SIZE = 1000
 | Category | Types |
 |----------|-------|
 | Contact | `email`, `phone` |
-| Government ID | `ssn`, `passport`, `aadhaar` |
-| Financial | `credit_card`, `iban`, `btc_address` |
-| Network | `ip`, `ipv6`, `mac_address` |
-| Authentication | `jwt`, `api_key`, `aws_key` |
-| Personal | `dob`, `drivers_license` |
-| Medical | `medical_record` |
-| Location | `coordinate` |
+| Government ID | `ssn`, `passport`, `itin`, `aadhaar`, `drivers_license` |
+| Financial | `credit_card`, `iban` |
+| Network | `ip`, `url` |
+| Crypto | `btc_address`, `eth_address` |
+| Credential | `api_key`, `bearer_token`, `aws_key` |
+| Personal | `dob` |
+| Medical | `mrn` |
 
 Each pattern includes a regex. Types with structured checksums (`credit_card`, `iban`, `btc_address`, `aadhaar`) have `validate_checksum()` support via Luhn, IBAN mod-97, Base58Check, and Verhoeff algorithms.
 
@@ -137,8 +137,9 @@ Unknown directions: nil return (caller must handle).
 
 ## Development Notes
 
-- `strip_pii` uses `gsub!` in a loop — modifies a dup of the input, not the original
+- `strip_pii` returns a hash `{ cleaned:, mapping:, detections:, source: }` — delegates to Patterns for detection and Redactor for replacement
 - The IP pattern will match partial IPs and some non-IP strings (false positives expected); intentionally broad
+- `Redactor.redact` sorts detections by position descending to avoid offset shift during string replacement
 - Erasure methods receive a live array reference and mutate it — callers must pass the actual store's array
 - `@erasure_engine` on the runner is lazily initialized; each runner instance has its own audit log
 - `prune_audit_log` uses `shift` in a loop to remove oldest entries first; the `AuditPrune` actor calls this hourly to prevent unbounded growth
