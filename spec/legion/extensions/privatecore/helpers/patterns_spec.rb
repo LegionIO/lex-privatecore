@@ -180,4 +180,54 @@ RSpec.describe Legion::Extensions::Privatecore::Helpers::Patterns do
       end
     end
   end
+
+  describe '.validate_checksum' do
+    context 'Luhn (credit card)' do
+      it 'validates a correct Visa number' do
+        expect(described_class.validate_checksum(:credit_card, '4111111111111111')).to be true
+      end
+
+      it 'rejects an invalid number' do
+        expect(described_class.validate_checksum(:credit_card, '4111111111111112')).to be false
+      end
+    end
+
+    context 'IBAN' do
+      it 'validates a correct German IBAN' do
+        expect(described_class.validate_checksum(:iban, 'DE89370400440532013000')).to be true
+      end
+
+      it 'rejects an invalid IBAN' do
+        expect(described_class.validate_checksum(:iban, 'DE00370400440532013000')).to be false
+      end
+    end
+
+    context 'Verhoeff (Aadhaar)' do
+      it 'validates a correct Aadhaar' do
+        expect(described_class.validate_checksum(:aadhaar, '234567890124')).to be true
+      end
+
+      it 'rejects an invalid Aadhaar' do
+        expect(described_class.validate_checksum(:aadhaar, '234567890123')).to be false
+      end
+    end
+
+    it 'returns true for types without checksum support' do
+      expect(described_class.validate_checksum(:email, 'anything')).to be true
+    end
+  end
+
+  describe '.detect with checksum validation' do
+    it 'filters out invalid credit card when checksum enabled' do
+      validation = { credit_card: :checksum }
+      result = described_class.detect('Card: 4111111111111112', enabled: [:credit_card], validation: validation)
+      expect(result).to eq([])
+    end
+
+    it 'keeps valid credit card when checksum enabled' do
+      validation = { credit_card: :checksum }
+      result = described_class.detect('Card: 4111111111111111', enabled: [:credit_card], validation: validation)
+      expect(result.size).to eq(1)
+    end
+  end
 end
