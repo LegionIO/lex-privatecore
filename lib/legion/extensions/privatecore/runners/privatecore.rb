@@ -8,18 +8,20 @@ module Legion
           include Legion::Extensions::Helpers::Lex if Legion::Extensions.const_defined?(:Helpers, false) &&
                                                       Legion::Extensions::Helpers.const_defined?(:Lex, false)
 
-          def enforce_boundary(text:, direction: :outbound, **)
+          def enforce_boundary(text:, direction: :outbound, mode: nil, service_url: nil, **)
             case direction
             when :outbound
-              pii_found = Helpers::Boundary.contains_pii?(text)
-              stripped = Helpers::Boundary.strip_pii(text)
+              result = Helpers::Boundary.strip_pii(text, mode: mode, service_url: service_url)
+              pii_found = !result[:detections].empty?
               log.debug "[privatecore] boundary outbound: length=#{text.length} pii_found=#{pii_found}"
               log.warn '[privatecore] PII stripped from outbound text' if pii_found
               {
                 original_length: text.length,
-                cleaned:         stripped,
+                cleaned:         result[:cleaned],
                 pii_found:       pii_found,
-                direction:       direction
+                direction:       direction,
+                detections:      result[:detections],
+                mapping:         result[:mapping]
               }
             when :inbound
               probe = Helpers::Boundary.detect_probe(text)
@@ -35,12 +37,14 @@ module Legion
             end
           end
 
-          def check_pii(text:, **)
-            has_pii = Helpers::Boundary.contains_pii?(text)
+          def check_pii(text:, service_url: nil, **)
+            result = Helpers::Boundary.strip_pii(text, service_url: service_url)
+            has_pii = !result[:detections].empty?
             log.debug "[privatecore] pii check: contains_pii=#{has_pii}"
             {
               contains_pii: has_pii,
-              stripped:     Helpers::Boundary.strip_pii(text)
+              stripped:     result[:cleaned],
+              detections:   result[:detections]
             }
           end
 
@@ -49,6 +53,23 @@ module Legion
             log.debug "[privatecore] probe check: detected=#{!probe.nil?}"
             Legion::Events.emit('privatecore.probe_detected', text_length: text.length) if probe && defined?(Legion::Events)
             { probe_detected: probe }
+          end
+
+          def restore_text(text:, mapping: nil, mapping_key: nil, **)
+            if mapping
+              restored = Helpers::Redactor.restore(text: text, mapping: mapping)
+              { restored: restored, success: true }
+            elsif mapping_key
+              retrieved = Helpers::Redactor.retrieve_mapping(key: mapping_key)
+              if retrieved
+                restored = Helpers::Redactor.restore(text: text, mapping: retrieved)
+                { restored: restored, success: true }
+              else
+                { restored: nil, success: false, error: :mapping_not_found }
+              end
+            else
+              { restored: nil, success: false, error: :no_mapping }
+            end
           end
 
           def erasure_audit(**)
