@@ -36,7 +36,18 @@ module Legion
             end
 
             result = Redactor.redact(text, detections: detections, mode: effective_mode)
-            source = detections.any? { |d| d[:source] == :ner } ? :ner_and_regex : :regex
+            has_ner_detections = detections.any? { |d| d[:source] == :ner }
+            has_regex_detections = detections.any? { |d| d[:source] != :ner }
+            source =
+              if detections.empty?
+                :none
+              elsif has_ner_detections && has_regex_detections
+                :ner_and_regex
+              elsif has_ner_detections
+                :ner
+              else
+                :regex
+              end
             result.merge(source: source)
           end
 

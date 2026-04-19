@@ -40,7 +40,7 @@ RSpec.describe Legion::Extensions::Privatecore::Helpers::NerClient do
       expect(result).to eq([])
     end
 
-    it 'returns empty array with source metadata on transparent fallback' do
+    it 'returns empty array on transparent fallback' do
       stubs = Faraday::Adapter::Test::Stubs.new do |stub|
         stub.post('/analyze') { raise Faraday::ConnectionFailed, 'refused' }
       end

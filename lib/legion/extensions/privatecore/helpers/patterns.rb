@@ -62,14 +62,16 @@ module Legion
 
               text.scan(meta[:regex]) do
                 md = Regexp.last_match
-                matched_text = md.captures.compact.first || md[0]
+                capture_index = md.captures.each_index.find { |index| !md[index + 1].nil? }
+                match_index = capture_index ? capture_index + 1 : 0
+                matched_text = md[match_index]
                 next if validation[type] == :checksum && !validate_checksum(type, matched_text)
 
                 detections << {
                   type:     type,
                   category: meta[:category],
-                  start:    md.begin(0),
-                  end:      md.end(0),
+                  start:    md.begin(match_index),
+                  end:      md.end(match_index),
                   match:    matched_text
                 }
               end
@@ -127,8 +129,44 @@ module Legion
             c.zero?
           end
 
+          BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+
           def base58check_valid?(address)
-            address.match?(/\A[13][a-km-zA-HJ-NP-Z1-9]{25,34}\z/)
+            return false unless address.match?(/\A[13][a-km-zA-HJ-NP-Z1-9]{25,34}\z/)
+
+            # Decode Base58 to integer
+            num = 0
+            address.each_char do |char|
+              index = BASE58_ALPHABET.index(char)
+              return false if index.nil?
+
+              num = (num * 58) + index
+            end
+
+            # Convert to 25-byte big-endian array (including 4-byte checksum)
+            bytes = []
+            25.times do
+              bytes.unshift(num & 0xff)
+              num >>= 8
+            end
+
+            # Leading '1' chars represent zero bytes
+            address.each_char do |char|
+              break unless char == '1'
+
+              bytes.unshift(0)
+            end
+
+            return false if bytes.size < 4
+
+            payload  = bytes[0...-4]
+            checksum = bytes[-4..]
+
+            # Double SHA-256 of payload; compare first 4 bytes
+            require 'digest'
+            first_hash  = Digest::SHA256.digest(payload.pack('C*'))
+            second_hash = Digest::SHA256.digest(first_hash)
+            second_hash.unpack('C*').first(4) == checksum
           end
         end
       end

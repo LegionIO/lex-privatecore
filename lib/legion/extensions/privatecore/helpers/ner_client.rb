@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'faraday'
 require 'json'
 
 module Legion
@@ -67,6 +68,8 @@ module Legion
           end
 
           def parse_response(response, text)
+            return [] unless response.status == 200
+
             entities = ::JSON.parse(response.body)
             entities.filter_map do |entity|
               type = ENTITY_MAP[entity['entity_type']]
