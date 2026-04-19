@@ -75,7 +75,14 @@ module Legion
               type = ENTITY_MAP[entity['entity_type']]
               next unless type
 
-              category = NER_CATEGORIES[type] || :unknown
+              category = NER_CATEGORIES[type]
+              if category.nil?
+                begin
+                  category = Patterns::PATTERNS.dig(type, :category) || :unknown
+                rescue NameError => _e
+                  category = :unknown
+                end
+              end
 
               {
                 type:     type,
@@ -91,6 +98,8 @@ module Legion
 
           def handle_fallback(fallback, error)
             case fallback
+            when :transparent
+              { fallback: true, detections: [] }
             when :strict
               raise NerServiceUnavailable, "NER service unavailable: #{error.message}"
             else

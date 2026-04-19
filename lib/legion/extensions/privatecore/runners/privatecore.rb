@@ -13,20 +13,23 @@ module Legion
             when :outbound
               result = Helpers::Boundary.strip_pii(text, mode: mode, service_url: service_url)
               pii_found = !result[:detections].empty?
-              log.debug "[privatecore] boundary outbound: length=#{text.length} pii_found=#{pii_found}"
+              text_length = text.is_a?(String) ? text.length : 0
+              log.debug "[privatecore] boundary outbound: length=#{text_length} pii_found=#{pii_found}"
               log.warn '[privatecore] PII stripped from outbound text' if pii_found
+              safe_detections = result[:detections].map { |d| d.except(:match) }
               {
-                original_length: text.length,
+                original_length: text_length,
                 cleaned:         result[:cleaned],
                 pii_found:       pii_found,
                 direction:       direction,
-                detections:      result[:detections],
-                mapping:         result[:mapping]
+                detections:      safe_detections,
+                mapping:         result[:mapping],
+                mapping_key:     result[:mapping_key]
               }
             when :inbound
               probe = Helpers::Boundary.detect_probe(text)
               action = probe ? :flag_and_log : :allow
-              log.debug "[privatecore] boundary inbound: probe=#{!probe.nil?} action=#{action}"
+              log.debug "[privatecore] boundary inbound: probe=#{probe} action=#{action}"
               log.warn '[privatecore] PROBE DETECTED in inbound text' if probe
               {
                 text:      text,
@@ -41,17 +44,18 @@ module Legion
             result = Helpers::Boundary.strip_pii(text, service_url: service_url)
             has_pii = !result[:detections].empty?
             log.debug "[privatecore] pii check: contains_pii=#{has_pii}"
+            safe_detections = result[:detections].map { |d| d.except(:match) }
             {
               contains_pii: has_pii,
               stripped:     result[:cleaned],
-              detections:   result[:detections]
+              detections:   safe_detections
             }
           end
 
           def detect_probe(text:, **)
             probe = Helpers::Boundary.detect_probe(text)
-            log.debug "[privatecore] probe check: detected=#{!probe.nil?}"
-            Legion::Events.emit('privatecore.probe_detected', text_length: text.length) if probe && defined?(Legion::Events)
+            log.debug "[privatecore] probe check: detected=#{probe}"
+            Legion::Events.emit('privatecore.probe_detected', text_length: text.is_a?(String) ? text.length : 0) if probe && defined?(Legion::Events)
             { probe_detected: probe }
           end
 

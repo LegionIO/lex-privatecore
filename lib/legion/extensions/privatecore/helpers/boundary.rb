@@ -29,26 +29,13 @@ module Legion
             effective_validation = resolve_setting(nil, :patterns, :validation) || {}
 
             detections = Patterns.detect(text, enabled: effective_enabled, validation: effective_validation)
-
-            if service_url || ner_enabled?
-              ner_detections = run_ner(text, service_url)
-              detections = merge_detections(detections, ner_detections)
-            end
+            ner_fallback = apply_ner(detections, text, service_url)
 
             result = Redactor.redact(text, detections: detections, mode: effective_mode)
-            has_ner_detections = detections.any? { |d| d[:source] == :ner }
-            has_regex_detections = detections.any? { |d| d[:source] != :ner }
-            source =
-              if detections.empty?
-                :none
-              elsif has_ner_detections && has_regex_detections
-                :ner_and_regex
-              elsif has_ner_detections
-                :ner
-              else
-                :regex
-              end
-            result.merge(source: source)
+            source = determine_source(detections, ner_fallback)
+            mapping_key = persist_mapping_if_configured(result[:mapping])
+
+            result.merge(source: source, mapping_key: mapping_key)
           end
 
           def contains_pii?(text, service_url: nil)
@@ -61,7 +48,12 @@ module Legion
             return true unless detections.empty?
 
             if service_url || ner_enabled?
-              ner_detections = run_ner(text, service_url)
+              ner_result = run_ner(text, service_url)
+              ner_detections = if ner_result.is_a?(Hash) && ner_result[:fallback]
+                                 ner_result[:detections]
+                               else
+                                 ner_result
+                               end
               return true unless ner_detections.empty?
             end
 
@@ -72,6 +64,45 @@ module Legion
             return false unless text.is_a?(String)
 
             PROBE_PATTERNS.any? { |p| p.match?(text) }
+          end
+
+          def apply_ner(detections, text, service_url)
+            return false unless service_url || ner_enabled?
+
+            ner_result = run_ner(text, service_url)
+            if ner_result.is_a?(Hash) && ner_result[:fallback]
+              ner_detections = ner_result[:detections]
+              detections.replace(merge_detections(detections, ner_detections))
+              true
+            else
+              detections.replace(merge_detections(detections, ner_result))
+              false
+            end
+          end
+
+          def determine_source(detections, ner_fallback)
+            has_ner = detections.any? { |d| d[:source] == :ner }
+            has_regex = detections.any? { |d| d[:source] != :ner }
+
+            if detections.empty?
+              :none
+            elsif ner_fallback
+              :regex_fallback
+            elsif has_ner && has_regex
+              :ner_and_regex
+            elsif has_ner
+              :ner
+            else
+              :regex
+            end
+          end
+
+          def persist_mapping_if_configured(mapping)
+            return nil if mapping.empty?
+            return nil unless resolve_setting(nil, :redaction, :cache_mappings) == true
+
+            cache_ttl = resolve_setting(nil, :redaction, :cache_ttl) || 3600
+            Redactor.persist_mapping(mapping: mapping, key: nil, ttl: cache_ttl)
           end
 
           def resolve_setting(override, *keys)
@@ -91,6 +122,9 @@ module Legion
             url = service_url || resolve_setting(nil, :ner, :service_url)
             return [] unless url
 
+            allow_http = resolve_setting(nil, :ner, :allow_http) == true
+            return [] unless allow_http || url.start_with?('https://')
+
             timeout  = resolve_setting(nil, :ner, :timeout) || 5
             fallback = resolve_setting(nil, :ner, :fallback) || :transparent
             conn = NerClient.build_connection(service_url: url, timeout: timeout)
@@ -101,14 +135,22 @@ module Legion
             return regex_detections if ner_detections.empty?
             return ner_detections if regex_detections.empty?
 
-            merged = ner_detections.dup
-            regex_detections.each do |rd|
-              overlaps = merged.any? do |nd|
-                rd[:start] < nd[:end] && rd[:end] > nd[:start]
+            all = regex_detections.map { |d| d.merge(source: :regex) } +
+                  ner_detections
+            all.sort_by! { |d| [d[:start], -(d[:end] - d[:start])] }
+
+            merged = []
+            all.each do |detection|
+              if merged.empty? || detection[:start] >= merged.last[:end]
+                merged << detection
+              else
+                prev = merged.last
+                det_span = detection[:end] - detection[:start]
+                prev_span = prev[:end] - prev[:start]
+                merged[-1] = detection if det_span > prev_span
               end
-              merged << rd unless overlaps
             end
-            merged.sort_by { |d| d[:start] }
+            merged
           end
         end
       end

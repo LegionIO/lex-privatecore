@@ -40,15 +40,16 @@ RSpec.describe Legion::Extensions::Privatecore::Helpers::NerClient do
       expect(result).to eq([])
     end
 
-    it 'returns empty array on transparent fallback' do
+    it 'returns fallback hash on transparent fallback' do
       stubs = Faraday::Adapter::Test::Stubs.new do |stub|
         stub.post('/analyze') { raise Faraday::ConnectionFailed, 'refused' }
       end
       conn = Faraday.new(url: service_url) { |f| f.adapter :test, stubs }
 
       result = described_class.analyze(text: 'test', connection: conn, fallback: :transparent)
-      expect(result).to be_a(Array)
-      expect(result).to eq([])
+      expect(result).to be_a(Hash)
+      expect(result[:fallback]).to be true
+      expect(result[:detections]).to eq([])
     end
 
     it 'raises NerServiceUnavailable on strict fallback' do
