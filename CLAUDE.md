@@ -101,7 +101,7 @@ Each pattern includes a regex. Types with structured checksums (`credit_card`, `
 |------|----------|
 | `:redact` | Replace match with `[REDACTED]` (default, non-reversible) |
 | `:placeholder` | Replace with type-tagged token (e.g. `[EMAIL_1]`), reversible via `restore()` |
-| `:mask` | Partial mask preserving structure (e.g. `j***@example.com`) |
+| `:mask` | Mask letters and digits with `*`, leaving non-alphanumeric separators/symbols intact |
 | `:synthetic` | Replace with realistic synthetic data of the same type |
 
 ## Erasure Class

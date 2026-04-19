@@ -39,8 +39,17 @@ RSpec.describe Legion::Extensions::Privatecore::Helpers::Boundary do
     end
 
     it 'respects the enabled patterns from settings' do
-      result = described_class.strip_pii('Card: 4111111111111111')
-      expect(result[:detections]).to eq([])
+      allow(Legion::Settings).to receive(:dig).and_call_original
+      allow(Legion::Settings).to receive(:dig)
+        .with(:privatecore, :patterns, :enabled)
+        .and_return([:email])
+
+      email_result = described_class.strip_pii('Email: john@example.com')
+      card_result = described_class.strip_pii('Card: 4111111111111111')
+
+      expect(email_result[:detections].size).to eq(1)
+      expect(email_result[:detections].first[:type]).to eq(:email)
+      expect(card_result[:detections]).to eq([])
     end
   end
 

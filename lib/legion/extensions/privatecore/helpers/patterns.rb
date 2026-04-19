@@ -6,7 +6,7 @@ module Legion
       module Helpers
         module Patterns
           PATTERNS = {
-            email:           { regex:    /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
+            email:           { regex:    /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/,
                                category: :contact },
             phone:           { regex:    /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/,
                                category: :contact },
@@ -143,21 +143,20 @@ module Legion
               num = (num * 58) + index
             end
 
-            # Convert to 25-byte big-endian array (including 4-byte checksum)
+            # Convert to variable-length big-endian bytes, then restore
+            # leading zero bytes represented by leading '1' characters.
             bytes = []
-            25.times do
+            while num.positive?
               bytes.unshift(num & 0xff)
               num >>= 8
             end
 
-            # Leading '1' chars represent zero bytes
-            address.each_char do |char|
-              break unless char == '1'
+            leading_ones = address.each_char.take_while { |char| char == '1' }.size
+            bytes = ([0] * leading_ones) + bytes
 
-              bytes.unshift(0)
-            end
-
-            return false if bytes.size < 4
+            # Base58Check P2PKH/P2SH addresses decode to:
+            # 1 version byte + 20 payload bytes + 4 checksum bytes.
+            return false unless bytes.size == 25
 
             payload  = bytes[0...-4]
             checksum = bytes[-4..]

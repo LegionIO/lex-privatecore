@@ -70,7 +70,7 @@ module Legion
             when :aws_key
               "AKIA#{Array.new(16) { (('0'..'9').to_a + ('A'..'Z').to_a).sample }.join}"
             else
-              SecureRandom.hex(original.length / 2)
+              SecureRandom.hex([((original.length + 1) / 2), 1].max)
             end
           end
 

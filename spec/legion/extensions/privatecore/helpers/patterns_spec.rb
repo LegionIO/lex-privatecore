@@ -215,6 +215,21 @@ RSpec.describe Legion::Extensions::Privatecore::Helpers::Patterns do
       end
     end
 
+    context 'Base58Check (BTC address)' do
+      # Genesis block coinbase reward address — universally accepted valid P2PKH address
+      let(:valid_btc) { '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa' }
+
+      it 'validates a known-good BTC address' do
+        expect(described_class.validate_checksum(:btc_address, valid_btc)).to be true
+      end
+
+      it 'rejects an address with a corrupted checksum' do
+        # Flip the last character to corrupt the checksum byte
+        corrupted = "#{valid_btc[0...-1]}b"
+        expect(described_class.validate_checksum(:btc_address, corrupted)).to be false
+      end
+    end
+
     it 'returns true for types without checksum support' do
       expect(described_class.validate_checksum(:email, 'anything')).to be true
     end
