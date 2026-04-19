@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.2.0] - 2026-04-17
+
+### Added
+- `Helpers::Patterns` module with 18 PII regex patterns (email, phone, SSN, IP, credit card, DOB, MRN, passport, IBAN, driver's license, URL, BTC address, ETH address, ITIN, Aadhaar, API key, bearer token, AWS key)
+- Configurable checksum validation for credit card (Luhn), IBAN (mod-97), Aadhaar (Verhoeff), and BTC address (Base58Check)
+- `Helpers::Redactor` with 4 redaction modes: `:redact`, `:placeholder`, `:mask`, `:synthetic`
+- Round-trip `restore()` for placeholder and synthetic modes with optional `Legion::Cache` persistence
+- `Helpers::NerClient` for optional Presidio NER service delegation with configurable fallback (`:silent`, `:transparent`, `:strict`)
+- `restore_text` runner method for de-anonymization
+- Position offsets (start/end) returned for all detected entities
+- All features configurable via `Legion::Settings.dig(:privatecore, ...)`
+
+### Changed
+- `Helpers::Boundary` refactored as coordinator delegating to Patterns, Redactor, and NerClient
+- `enforce_boundary` and `check_pii` runner methods now accept optional `mode:` and `service_url:` kwargs
+- `enforce_boundary` outbound response includes `:detections` and `:mapping` keys
+- `check_pii` response includes `:detections` array
+- `faraday` added as runtime dependency for NER client
+- Only original 4 patterns (email, phone, SSN, IP) enabled by default — new patterns opt-in via settings
+
 ## [0.1.6] - 2026-03-30
 
 ### Changed

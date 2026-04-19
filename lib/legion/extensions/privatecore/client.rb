@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'legion/extensions/privatecore/helpers/patterns'
+require 'legion/extensions/privatecore/helpers/redactor'
+require 'legion/extensions/privatecore/helpers/ner_client'
 require 'legion/extensions/privatecore/helpers/boundary'
 require 'legion/extensions/privatecore/helpers/erasure'
 require 'legion/extensions/privatecore/helpers/similarity'
