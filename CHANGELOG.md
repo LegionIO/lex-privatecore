@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.1] - 2026-05-11
+
+### Changed
+- Set `remote_invocable?` to `false` — this extension does not consume from AMQP queues and does not need remote transport topology (exchanges, queues, DLX). Its runner is invoked directly in-process by other extensions.
+
 ## [0.2.0] - 2026-04-17
 
 ### Added

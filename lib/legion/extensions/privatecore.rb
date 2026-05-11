@@ -13,6 +13,10 @@ require 'legion/extensions/privatecore/runners/embedding_guard'
 module Legion
   module Extensions
     module Privatecore
+      class << self
+        def remote_invocable? = false
+      end
+
       extend Legion::Extensions::Core if Legion::Extensions.const_defined? :Core, false
     end
   end
